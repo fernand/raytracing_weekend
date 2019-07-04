@@ -1,14 +1,16 @@
-use crate::object::{HitRecord, Hitable};
-use crate::ray::*;
-use crate::vec3::*;
+use crate::material::{HitRecord, Material};
+use crate::object::Hitable;
+use crate::ray::Ray;
+use crate::vec3::Vec3;
 
 pub struct Sphere {
     pub center: Vec3,
-    pub radius: Float,
+    pub radius: f64,
+    pub material: Material,
 }
 
 impl Hitable for Sphere {
-    fn hit(&self, r: &Ray, t_min: Float, t_max: Float) -> Option<HitRecord> {
+    fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> Option<HitRecord> {
         let oc = r.origin - self.center;
         let a = r.direction.dot(r.direction);
         let b = oc.dot(r.direction);
@@ -22,6 +24,7 @@ impl Hitable for Sphere {
                     t: temp,
                     p: p,
                     normal: (p - self.center) / self.radius,
+                    material: &self.material,
                 });
             }
             temp = (-b + discriminant.sqrt()) / a;
@@ -31,6 +34,7 @@ impl Hitable for Sphere {
                     t: temp,
                     p: p,
                     normal: (p - self.center) / self.radius,
+                    material: &self.material,
                 });
             }
         }

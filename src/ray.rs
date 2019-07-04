@@ -1,4 +1,4 @@
-use crate::vec3::*;
+use crate::vec3::Vec3;
 
 #[derive(Debug)]
 pub struct Ray {
@@ -11,7 +11,7 @@ impl Ray {
         Ray { origin, direction }
     }
 
-    pub fn point_at_parameter(&self, t: Float) -> Vec3 {
+    pub fn point_at_parameter(&self, t: f64) -> Vec3 {
         self.origin + t * self.direction
     }
 }

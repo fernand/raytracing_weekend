@@ -1,46 +1,44 @@
 use std::ops::*;
 
+use rand::rngs::SmallRng;
 use rand::Rng;
 
-pub type Float = f64;
-pub const MAX_FLOAT: Float = std::f64::MAX;
-
-#[derive(Clone, Copy, Default, Debug)]
-pub struct Vec3(pub Float, pub Float, pub Float);
+#[derive(Clone, Copy, Debug)]
+pub struct Vec3(pub f64, pub f64, pub f64);
 
 impl Vec3 {
     #[inline]
-    pub fn x(&self) -> Float {
+    pub fn x(&self) -> f64 {
         self.0
     }
     #[inline]
-    pub fn y(&self) -> Float {
+    pub fn y(&self) -> f64 {
         self.1
     }
     #[inline]
-    pub fn z(&self) -> Float {
+    pub fn z(&self) -> f64 {
         self.2
     }
     #[inline]
-    pub fn r(&self) -> Float {
+    pub fn r(&self) -> f64 {
         self.0
     }
     #[inline]
-    pub fn g(&self) -> Float {
+    pub fn g(&self) -> f64 {
         self.1
     }
     #[inline]
-    pub fn b(&self) -> Float {
+    pub fn b(&self) -> f64 {
         self.2
     }
 
     #[inline]
-    pub fn length(&self) -> Float {
+    pub fn length(&self) -> f64 {
         (self.0 * self.0 + self.1 * self.1 + self.2 * self.2).sqrt()
     }
 
     #[inline]
-    pub fn squared_length(&self) -> Float {
+    pub fn squared_length(&self) -> f64 {
         self.0 * self.0 + self.1 * self.1 + self.2 * self.2
     }
 
@@ -50,7 +48,7 @@ impl Vec3 {
     }
 
     #[inline]
-    pub fn dot(&self, v2: Vec3) -> Float {
+    pub fn dot(&self, v2: Vec3) -> f64 {
         self.0 * v2.0 + self.1 * v2.1 + self.2 * v2.2
     }
 
@@ -69,10 +67,10 @@ impl Vec3 {
     }
 
     #[inline]
-    pub fn random_in_unit_sphere(rng: &mut impl Rng) -> Vec3 {
+    pub fn random_in_unit_sphere(rng: &mut SmallRng) -> Vec3 {
         loop {
-            let p = 2.0 * Vec3(rng.gen::<Float>(), rng.gen::<Float>(), rng.gen::<Float>())
-                - Vec3(1., 1., 1.);
+            let p =
+                2.0 * Vec3(rng.gen::<f64>(), rng.gen::<f64>(), rng.gen::<f64>()) - Vec3(1., 1., 1.);
             if p.squared_length() < 1.0 {
                 return p;
             }
@@ -116,7 +114,7 @@ impl Div for Vec3 {
     }
 }
 
-impl Mul<Vec3> for Float {
+impl Mul<Vec3> for f64 {
     type Output = Vec3;
 
     #[inline]
@@ -125,20 +123,20 @@ impl Mul<Vec3> for Float {
     }
 }
 
-impl Div<Float> for Vec3 {
+impl Div<f64> for Vec3 {
     type Output = Vec3;
 
     #[inline]
-    fn div(self, t: Float) -> Vec3 {
+    fn div(self, t: f64) -> Vec3 {
         Vec3(self.0 / t, self.1 / t, self.2 / t)
     }
 }
 
-impl Mul<Float> for Vec3 {
+impl Mul<f64> for Vec3 {
     type Output = Vec3;
 
     #[inline]
-    fn mul(self, t: Float) -> Vec3 {
+    fn mul(self, t: f64) -> Vec3 {
         Vec3(self.0 * t, self.1 * t, self.2 * t)
     }
 }
@@ -188,18 +186,18 @@ impl DivAssign for Vec3 {
     }
 }
 
-impl MulAssign<Float> for Vec3 {
+impl MulAssign<f64> for Vec3 {
     #[inline]
-    fn mul_assign(&mut self, t: Float) {
+    fn mul_assign(&mut self, t: f64) {
         self.0 *= t;
         self.1 *= t;
         self.2 *= t;
     }
 }
 
-impl DivAssign<Float> for Vec3 {
+impl DivAssign<f64> for Vec3 {
     #[inline]
-    fn div_assign(&mut self, t: Float) {
+    fn div_assign(&mut self, t: f64) {
         let k = 1.0 / t;
         self.0 *= k;
         self.1 *= k;

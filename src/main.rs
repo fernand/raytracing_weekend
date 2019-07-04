@@ -1,4 +1,5 @@
 mod camera;
+mod material;
 mod object;
 mod ray;
 mod sphere;
@@ -10,15 +11,22 @@ use std::io::Write;
 use rand::prelude::*;
 
 use crate::camera::Camera;
+use crate::material::Material;
 use crate::object::Hitable;
 use crate::ray::Ray;
 use crate::sphere::Sphere;
-use crate::vec3::{Float, Vec3, MAX_FLOAT};
+use crate::vec3::Vec3;
 
-fn color(r: &Ray, world: &impl Hitable, rng: &mut impl Rng) -> Vec3 {
-    if let Some(hr) = world.hit(r, 0.0, MAX_FLOAT) {
-        let target = hr.p + hr.normal + Vec3::random_in_unit_sphere(rng);
-        return 0.5 * color(&Ray::new(hr.p, target - hr.p), world, rng);
+fn color(r: &Ray, world: &impl Hitable, rng: &mut SmallRng, depth: i64) -> Vec3 {
+    if let Some(hr) = world.hit(r, 0.001, std::f64::MAX) {
+        if depth >= 50 {
+            return Vec3(0., 0., 0.);
+        }
+        if let Some((scattered, attenuation)) = hr.material.scatter(r, &hr, rng) {
+            return attenuation * color(&scattered, world, rng, depth + 1);
+        } else {
+            return Vec3(0., 0., 0.);
+        }
     } else {
         let unit_direction = r.direction.into_unit();
         let t = 0.5 * (unit_direction.y() + 1.0);
@@ -38,10 +46,16 @@ fn main() -> std::io::Result<()> {
         Box::new(Sphere {
             center: Vec3(0.0, 0.0, -1.0),
             radius: 0.5,
+            material: Material::Lambertian {
+                albedo: Vec3(0.8, 0.3, 0.3),
+            } as Material,
         }),
         Box::new(Sphere {
             center: Vec3(0.0, -100.5, -1.0),
             radius: 100.0,
+            material: Material::Lambertian {
+                albedo: Vec3(0.8, 0.8, 0.0),
+            } as Material,
         }),
     ];
     let cam = Camera::new();
@@ -49,12 +63,13 @@ fn main() -> std::io::Result<()> {
         for i in 0..nx {
             let mut col = Vec3(0.0, 0.0, 0.0);
             for _ in 0..ns {
-                let u = ((i as Float) + rng.gen::<Float>()) / (nx as Float);
-                let v = ((j as Float) + rng.gen::<Float>()) / (ny as Float);
+                let u = ((i as f64) + rng.gen::<f64>()) / (nx as f64);
+                let v = ((j as f64) + rng.gen::<f64>()) / (ny as f64);
                 let r = cam.get_ray(u, v);
-                col += color(&r, &world, &mut rng);
+                col += color(&r, &world, &mut rng, 0);
             }
-            col /= ns as Float;
+            col /= ns as f64;
+            col = Vec3(col.r().sqrt(), col.g().sqrt(), col.b().sqrt());
             file.write(
                 format!(
                     "{} {} {}\n",
