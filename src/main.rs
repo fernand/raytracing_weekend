@@ -5,6 +5,10 @@ mod ray;
 mod sphere;
 mod vec3;
 
+use png::HasParameters;
+use std::fs::File;
+use std::io::BufWriter;
+
 use rand::prelude::*;
 
 use crate::camera::Camera;
@@ -32,10 +36,15 @@ fn color(r: &Ray, world: &impl Hitable, rng: &mut SmallRng, depth: i64) -> Vec3 
 }
 
 fn main() -> std::io::Result<()> {
-    let nx = 1000;
-    let ny = 500;
-    let ns = 100;
-    let mut imgbuf = image::ImageBuffer::new(nx, ny);
+    const NX: usize = 1000;
+    const NY: usize = 500;
+    const NS: usize = 100;
+    let file = File::create("image.png")?;
+    let ref mut w = BufWriter::new(file);
+    let mut encoder = png::Encoder::new(w, NX as u32, NY as u32);
+    encoder.set(png::ColorType::RGB).set(png::BitDepth::Eight);
+    let mut writer = encoder.write_header()?;
+    let mut pixels: [u8; NX * NY * 3] = [0; NX * NY * 3];
     let mut rng = rand::rngs::SmallRng::seed_from_u64(0xDEADBEEF);
     let world: Vec<Box<Hitable>> = vec![
         Box::new(Sphere {
@@ -70,24 +79,22 @@ fn main() -> std::io::Result<()> {
         }),
     ];
     let cam = Camera::new();
-    for (x, y, pixel) in imgbuf.enumerate_pixels_mut() {
-        let i = x;
-        let j = ny - y;
-        let mut col = Vec3(0.0, 0.0, 0.0);
-        for _ in 0..ns {
-            let u = ((i as f64) + rng.gen::<f64>()) / (nx as f64);
-            let v = ((j as f64) + rng.gen::<f64>()) / (ny as f64);
-            let r = cam.get_ray(u, v);
-            col += color(&r, &world, &mut rng, 0);
+    for i in 0..NX {
+        for j in 0..NY {
+            let mut col = Vec3(0.0, 0.0, 0.0);
+            for _ in 0..NS {
+                let u = ((i as f64) + rng.gen::<f64>()) / (NX as f64);
+                let v = ((j as f64) + rng.gen::<f64>()) / (NY as f64);
+                let r = cam.get_ray(u, v);
+                col += color(&r, &world, &mut rng, 0);
+            }
+            col /= NS as f64;
+            col = Vec3(col.r().sqrt(), col.g().sqrt(), col.b().sqrt());
+            pixels[3 * NX * (NY - j - 1) + 3 * i] = (255.99 * col.r()) as u8;
+            pixels[3 * NX * (NY - j - 1) + 3 * i + 1] = (255.99 * col.g()) as u8;
+            pixels[3 * NX * (NY - j - 1) + 3 * i + 2] = (255.99 * col.b()) as u8;
         }
-        col /= ns as f64;
-        col = Vec3(col.r().sqrt(), col.g().sqrt(), col.b().sqrt());
-        *pixel = image::Rgb([
-            (255.99 * col.r()) as u8,
-            (255.99 * col.g()) as u8,
-            (255.99 * col.b()) as u8,
-        ])
     }
-    imgbuf.save("image.png")?;
+    writer.write_image_data(&pixels)?;
     Ok(())
 }
