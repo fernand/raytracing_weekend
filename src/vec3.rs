@@ -48,12 +48,12 @@ impl Vec3 {
     }
 
     #[inline]
-    pub fn dot(&self, v2: Vec3) -> f64 {
+    pub fn dot(&self, v2: &Vec3) -> f64 {
         self.0 * v2.0 + self.1 * v2.1 + self.2 * v2.2
     }
 
     #[inline]
-    pub fn cross(&self, v2: Vec3) -> Vec3 {
+    pub fn cross(&self, v2: &Vec3) -> Vec3 {
         Vec3(
             self.1 * v2.2 - self.2 * v2.1,
             -(self.0 * v2.2 - self.2 * v2.0),
@@ -64,6 +64,11 @@ impl Vec3 {
     #[inline]
     pub fn into_unit(self) -> Vec3 {
         self / self.length()
+    }
+
+    #[inline]
+    pub fn reflect(self, n: &Vec3) -> Vec3 {
+        self - 2.0 * self.dot(n) * *n
     }
 
     #[inline]

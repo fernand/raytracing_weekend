@@ -5,9 +5,6 @@ mod ray;
 mod sphere;
 mod vec3;
 
-use std::fs::File;
-use std::io::Write;
-
 use rand::prelude::*;
 
 use crate::camera::Camera;
@@ -35,12 +32,10 @@ fn color(r: &Ray, world: &impl Hitable, rng: &mut SmallRng, depth: i64) -> Vec3 
 }
 
 fn main() -> std::io::Result<()> {
-    let nx: i64 = 2000;
-    let ny: i64 = 1000;
-    let ns: i64 = 100;
-    let mut file = File::create("hello.ppm")?;
-    let headers = format!("P3\n{} {}\n255\n", nx, ny);
-    file.write(headers.as_bytes())?;
+    let nx = 1000;
+    let ny = 500;
+    let ns = 100;
+    let mut imgbuf = image::ImageBuffer::new(nx, ny);
     let mut rng = rand::rngs::SmallRng::seed_from_u64(0xDEADBEEF);
     let world: Vec<Box<Hitable>> = vec![
         Box::new(Sphere {
@@ -57,29 +52,42 @@ fn main() -> std::io::Result<()> {
                 albedo: Vec3(0.8, 0.8, 0.0),
             } as Material,
         }),
+        Box::new(Sphere {
+            center: Vec3(1.0, 0.0, -1.0),
+            radius: 0.5,
+            material: Material::Metal {
+                albedo: Vec3(0.8, 0.6, 0.2),
+                fuzz: 1.0,
+            } as Material,
+        }),
+        Box::new(Sphere {
+            center: Vec3(-1.0, 0.0, -1.0),
+            radius: 0.5,
+            material: Material::Metal {
+                albedo: Vec3(0.8, 0.8, 0.8),
+                fuzz: 0.3,
+            } as Material,
+        }),
     ];
     let cam = Camera::new();
-    for j in (0..ny).rev() {
-        for i in 0..nx {
-            let mut col = Vec3(0.0, 0.0, 0.0);
-            for _ in 0..ns {
-                let u = ((i as f64) + rng.gen::<f64>()) / (nx as f64);
-                let v = ((j as f64) + rng.gen::<f64>()) / (ny as f64);
-                let r = cam.get_ray(u, v);
-                col += color(&r, &world, &mut rng, 0);
-            }
-            col /= ns as f64;
-            col = Vec3(col.r().sqrt(), col.g().sqrt(), col.b().sqrt());
-            file.write(
-                format!(
-                    "{} {} {}\n",
-                    (255.99 * col.r()) as i64,
-                    (255.99 * col.g()) as i64,
-                    (255.99 * col.b()) as i64
-                )
-                .as_bytes(),
-            )?;
+    for (x, y, pixel) in imgbuf.enumerate_pixels_mut() {
+        let i = x;
+        let j = ny - y;
+        let mut col = Vec3(0.0, 0.0, 0.0);
+        for _ in 0..ns {
+            let u = ((i as f64) + rng.gen::<f64>()) / (nx as f64);
+            let v = ((j as f64) + rng.gen::<f64>()) / (ny as f64);
+            let r = cam.get_ray(u, v);
+            col += color(&r, &world, &mut rng, 0);
         }
+        col /= ns as f64;
+        col = Vec3(col.r().sqrt(), col.g().sqrt(), col.b().sqrt());
+        *pixel = image::Rgb([
+            (255.99 * col.r()) as u8,
+            (255.99 * col.g()) as u8,
+            (255.99 * col.b()) as u8,
+        ])
     }
+    imgbuf.save("image.png")?;
     Ok(())
 }

@@ -11,6 +11,7 @@ pub struct HitRecord<'a> {
 
 pub enum Material {
     Lambertian { albedo: Vec3 },
+    Metal { albedo: Vec3, fuzz: f64 },
 }
 
 impl Material {
@@ -19,6 +20,16 @@ impl Material {
             Material::Lambertian { albedo } => {
                 let target = rec.p + rec.normal + Vec3::random_in_unit_sphere(rng);
                 Some((Ray::new(rec.p, target - rec.p), *albedo))
+            }
+            Material::Metal { albedo, fuzz } => {
+                let reflected = r_in.direction.into_unit().reflect(&rec.normal);
+                let scattered =
+                    Ray::new(rec.p, reflected + *fuzz * Vec3::random_in_unit_sphere(rng));
+                if scattered.direction.dot(&rec.normal) > 0. {
+                    Some((scattered, *albedo))
+                } else {
+                    None
+                }
             }
         }
     }
