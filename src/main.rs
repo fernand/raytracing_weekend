@@ -5,11 +5,12 @@ mod ray;
 mod sphere;
 mod vec3;
 
-use png::HasParameters;
 use std::fs::File;
 use std::io::BufWriter;
 
-use rand::prelude::*;
+use png::HasParameters;
+use rand::rngs::SmallRng;
+use rand::{Rng, SeedableRng};
 
 use crate::camera::Camera;
 use crate::material::Material;
