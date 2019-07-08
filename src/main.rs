@@ -36,15 +36,28 @@ fn color(r: &Ray, world: &impl Hitable, rng: &mut impl Rng, depth: i64) -> Vec3 
     }
 }
 
-fn main() -> std::io::Result<()> {
+fn write_png(nx: usize, ny: usize, colors: &Vec<Vec<Vec3>>) -> std::io::Result<()> {
+    let file = File::create("image.png")?;
+    let ref mut w = BufWriter::new(file);
+    let mut encoder = png::Encoder::new(w, nx as u32, ny as u32);
+    encoder.set(png::ColorType::RGB).set(png::BitDepth::Eight);
+    let mut writer = encoder.write_header()?;
+    let mut pixels: Vec<u8> = Vec::new();
+    for column in colors.iter() {
+        for &col in column.iter() {
+            pixels.push((255.99 * col.r().sqrt()) as u8);
+            pixels.push((255.99 * col.g().sqrt()) as u8);
+            pixels.push((255.99 * col.b().sqrt()) as u8);
+        }
+    }
+    writer.write_image_data(&pixels)?;
+    Ok(())
+}
+
+fn main() {
     const NX: usize = 2000;
     const NY: usize = 1000;
     const NS: usize = 100;
-    let file = File::create("image.png")?;
-    let ref mut w = BufWriter::new(file);
-    let mut encoder = png::Encoder::new(w, NX as u32, NY as u32);
-    encoder.set(png::ColorType::RGB).set(png::BitDepth::Eight);
-    let mut writer = encoder.write_header()?;
     let world: Vec<Box<Hitable>> = vec![
         Box::new(Sphere {
             center: Vec3(0.0, 0.0, -1.0),
@@ -104,14 +117,5 @@ fn main() -> std::io::Result<()> {
                 .collect()
         })
         .collect();
-    let mut pixels: Vec<u8> = Vec::new();
-    for column in colors.iter() {
-        for &col in column.iter() {
-            pixels.push((255.99 * col.r().sqrt()) as u8);
-            pixels.push((255.99 * col.g().sqrt()) as u8);
-            pixels.push((255.99 * col.b().sqrt()) as u8);
-        }
-    }
-    writer.write_image_data(&pixels)?;
-    Ok(())
+    write_png(NX, NY, &colors).unwrap();
 }
