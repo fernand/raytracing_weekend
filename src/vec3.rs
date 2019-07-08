@@ -1,6 +1,6 @@
 use std::ops::*;
 
-use crate::rand;
+use rand::Rng;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Vec3(pub f64, pub f64, pub f64);
@@ -71,9 +71,10 @@ impl Vec3 {
     }
 
     #[inline]
-    pub fn random_in_unit_sphere() -> Vec3 {
+    pub fn random_in_unit_sphere(rng: &mut impl Rng) -> Vec3 {
         loop {
-            let p = 2.0 * Vec3(rand::drand(), rand::drand(), rand::drand()) - Vec3(1., 1., 1.);
+            let p =
+                2.0 * Vec3(rng.gen::<f64>(), rng.gen::<f64>(), rng.gen::<f64>()) - Vec3(1., 1., 1.);
             if p.squared_length() < 1.0 {
                 return p;
             }
