@@ -3,7 +3,6 @@ mod material;
 mod object;
 mod rand;
 mod ray;
-mod sphere;
 mod vec3;
 
 use std::fs::File;
@@ -13,12 +12,11 @@ use png::HasParameters;
 
 use crate::camera::Camera;
 use crate::material::Material;
-use crate::object::Hitable;
+use crate::object::{Hitable, World};
 use crate::ray::Ray;
-use crate::sphere::Sphere;
 use crate::vec3::Vec3;
 
-fn color(r: &Ray, world: &impl Hitable, depth: i64) -> Vec3 {
+fn color(r: &Ray, world: &World, depth: i64) -> Vec3 {
     if let Some(hr) = world.hit(r, 0.001, std::f64::MAX) {
         if depth >= 50 {
             return Vec3(0., 0., 0.);
@@ -57,38 +55,38 @@ fn main() {
     const NX: usize = 2000;
     const NY: usize = 1000;
     const NS: usize = 100;
-    let world: Vec<Box<Hitable>> = vec![
-        Box::new(Sphere {
+    let world = World::new(vec![
+        Hitable::Sphere {
             center: Vec3(0.0, 0.0, -1.0),
             radius: 0.5,
             material: Material::Lambertian {
                 albedo: Vec3(0.8, 0.3, 0.3),
             } as Material,
-        }),
-        Box::new(Sphere {
+        },
+        Hitable::Sphere {
             center: Vec3(0.0, -100.5, -1.0),
             radius: 100.0,
             material: Material::Lambertian {
                 albedo: Vec3(0.8, 0.8, 0.0),
             } as Material,
-        }),
-        Box::new(Sphere {
+        },
+        Hitable::Sphere {
             center: Vec3(1.0, 0.0, -1.0),
             radius: 0.5,
             material: Material::Metal {
                 albedo: Vec3(0.8, 0.6, 0.2),
                 fuzz: 1.0,
             } as Material,
-        }),
-        Box::new(Sphere {
+        },
+        Hitable::Sphere {
             center: Vec3(-1.0, 0.0, -1.0),
             radius: 0.5,
             material: Material::Metal {
                 albedo: Vec3(0.8, 0.8, 0.8),
                 fuzz: 0.3,
             } as Material,
-        }),
-    ];
+        },
+    ]);
     let cam = Camera::new(
         Vec3(-2., 2., 1.),
         Vec3(0., 0., -1.),
@@ -112,5 +110,5 @@ fn main() {
         }
         colors.push(subv);
     }
-    //    write_png(NX, NY, &colors).unwrap();
+    write_png(NX, NY, &colors).unwrap();
 }

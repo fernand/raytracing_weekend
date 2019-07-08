@@ -9,4 +9,4 @@ png = "0.11.0"
 
 [profile.release]
 lto = true
-debug = true
+#debug = true
