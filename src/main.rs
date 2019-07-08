@@ -11,6 +11,7 @@ use std::io::BufWriter;
 use png::HasParameters;
 use rand::rngs::SmallRng;
 use rand::{Rng, SeedableRng};
+use rayon::prelude::*;
 
 use crate::camera::Camera;
 use crate::material::Material;
@@ -79,7 +80,13 @@ fn main() -> std::io::Result<()> {
             } as Material,
         }),
     ];
-    let cam = Camera::new();
+    let cam = Camera::new(
+        Vec3(-2., 2., 1.),
+        Vec3(0., 0., -1.),
+        Vec3(0., 1., 0.),
+        40.,
+        NX as f64 / NY as f64,
+    );
     for i in 0..NX {
         for j in 0..NY {
             let mut col = Vec3(0.0, 0.0, 0.0);
