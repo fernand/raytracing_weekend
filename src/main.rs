@@ -1,6 +1,7 @@
 mod camera;
 mod material;
 mod object;
+mod rand;
 mod ray;
 mod sphere;
 mod vec3;
@@ -9,8 +10,6 @@ use std::fs::File;
 use std::io::BufWriter;
 
 use png::HasParameters;
-use rand::{Rng, SeedableRng};
-use rayon::prelude::*;
 
 use crate::camera::Camera;
 use crate::material::Material;
@@ -19,13 +18,13 @@ use crate::ray::Ray;
 use crate::sphere::Sphere;
 use crate::vec3::Vec3;
 
-fn color(r: &Ray, world: &impl Hitable, rng: &mut impl Rng, depth: i64) -> Vec3 {
+fn color(r: &Ray, world: &impl Hitable, depth: i64) -> Vec3 {
     if let Some(hr) = world.hit(r, 0.001, std::f64::MAX) {
         if depth >= 50 {
             return Vec3(0., 0., 0.);
         }
-        if let Some((scattered, attenuation)) = hr.material.scatter(r, &hr, rng) {
-            return attenuation * color(&scattered, world, rng, depth + 1);
+        if let Some((scattered, attenuation)) = hr.material.scatter(r, &hr) {
+            return attenuation * color(&scattered, world, depth + 1);
         } else {
             return Vec3(0., 0., 0.);
         }
@@ -97,25 +96,21 @@ fn main() {
         40.,
         NX as f64 / NY as f64,
     );
-    let colors: Vec<Vec<Vec3>> = (0..NY)
-        .into_par_iter()
-        .rev()
-        .map(|j| {
-            (0..NX)
-                .map(|i| {
-                    let mut rng = rand::rngs::SmallRng::seed_from_u64(rand::random::<u64>());
-                    let mut col = Vec3(0.0, 0.0, 0.0);
-                    for _ in 0..NS {
-                        let u = ((i as f64) + rng.gen::<f64>()) / (NX as f64);
-                        let v = ((j as f64) + rng.gen::<f64>()) / (NY as f64);
-                        let r = cam.get_ray(u, v);
-                        col += color(&r, &world, &mut rng, 0);
-                    }
-                    col /= NS as f64;
-                    col
-                })
-                .collect()
-        })
-        .collect();
-    write_png(NX, NY, &colors).unwrap();
+    let mut colors: Vec<Vec<Vec3>> = Vec::new();
+    for j in (0..NY).rev() {
+        let mut subv: Vec<Vec3> = Vec::new();
+        for i in 0..NX {
+            let mut col = Vec3(0.0, 0.0, 0.0);
+            for _ in 0..NS {
+                let u = ((i as f64) + rand::drand()) / (NX as f64);
+                let v = ((j as f64) + rand::drand()) / (NY as f64);
+                let r = cam.get_ray(u, v);
+                col += color(&r, &world, 0);
+            }
+            col /= NS as f64;
+            subv.push(col);
+        }
+        colors.push(subv);
+    }
+    //    write_png(NX, NY, &colors).unwrap();
 }
