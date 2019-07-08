@@ -9,7 +9,7 @@ use std::fs::File;
 use std::io::BufWriter;
 
 use png::HasParameters;
-use rand::prelude::*;
+use rand::{Rng, SeedableRng};
 use rayon::prelude::*;
 
 use crate::camera::Camera;
@@ -88,9 +88,9 @@ fn main() -> std::io::Result<()> {
         .into_par_iter()
         .rev()
         .map(|j| {
-            let mut rng = thread_rng();
             (0..NX)
                 .map(|i| {
+                    let mut rng = rand::rngs::SmallRng::seed_from_u64(rand::random::<u64>());
                     let mut col = Vec3(0.0, 0.0, 0.0);
                     for _ in 0..NS {
                         let u = ((i as f64) + rng.gen::<f64>()) / (NX as f64);
