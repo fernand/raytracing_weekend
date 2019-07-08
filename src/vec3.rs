@@ -1,6 +1,5 @@
 use std::ops::*;
 
-use rand::rngs::SmallRng;
 use rand::Rng;
 
 #[derive(Clone, Copy, Debug)]
@@ -72,7 +71,7 @@ impl Vec3 {
     }
 
     #[inline]
-    pub fn random_in_unit_sphere(rng: &mut SmallRng) -> Vec3 {
+    pub fn random_in_unit_sphere(rng: &mut impl Rng) -> Vec3 {
         loop {
             let p =
                 2.0 * Vec3(rng.gen::<f64>(), rng.gen::<f64>(), rng.gen::<f64>()) - Vec3(1., 1., 1.);

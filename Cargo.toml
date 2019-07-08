@@ -5,6 +5,6 @@ authors = ["Fernand Pajot <fernand@epigram.me>"]
 edition = "2018"
 
 [dependencies]
-rand = {version = "0.7.0", features = ["small_rng"]}
+rand = "0.7.0"
 rayon = "1.1.0"
 png = "0.11.0"

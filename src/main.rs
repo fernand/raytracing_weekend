@@ -9,8 +9,7 @@ use std::fs::File;
 use std::io::BufWriter;
 
 use png::HasParameters;
-use rand::rngs::SmallRng;
-use rand::{Rng, SeedableRng};
+use rand::prelude::*;
 use rayon::prelude::*;
 
 use crate::camera::Camera;
@@ -20,7 +19,7 @@ use crate::ray::Ray;
 use crate::sphere::Sphere;
 use crate::vec3::Vec3;
 
-fn color(r: &Ray, world: &impl Hitable, rng: &mut SmallRng, depth: i64) -> Vec3 {
+fn color(r: &Ray, world: &impl Hitable, rng: &mut impl Rng, depth: i64) -> Vec3 {
     if let Some(hr) = world.hit(r, 0.001, std::f64::MAX) {
         if depth >= 50 {
             return Vec3(0., 0., 0.);
@@ -38,16 +37,14 @@ fn color(r: &Ray, world: &impl Hitable, rng: &mut SmallRng, depth: i64) -> Vec3 
 }
 
 fn main() -> std::io::Result<()> {
-    const NX: usize = 1000;
-    const NY: usize = 500;
+    const NX: usize = 2000;
+    const NY: usize = 1000;
     const NS: usize = 100;
     let file = File::create("image.png")?;
     let ref mut w = BufWriter::new(file);
     let mut encoder = png::Encoder::new(w, NX as u32, NY as u32);
     encoder.set(png::ColorType::RGB).set(png::BitDepth::Eight);
     let mut writer = encoder.write_header()?;
-    let mut pixels: [u8; NX * NY * 3] = [0; NX * NY * 3];
-    let mut rng = rand::rngs::SmallRng::seed_from_u64(0xDEADBEEF);
     let world: Vec<Box<Hitable>> = vec![
         Box::new(Sphere {
             center: Vec3(0.0, 0.0, -1.0),
@@ -87,20 +84,32 @@ fn main() -> std::io::Result<()> {
         40.,
         NX as f64 / NY as f64,
     );
-    for i in 0..NX {
-        for j in 0..NY {
-            let mut col = Vec3(0.0, 0.0, 0.0);
-            for _ in 0..NS {
-                let u = ((i as f64) + rng.gen::<f64>()) / (NX as f64);
-                let v = ((j as f64) + rng.gen::<f64>()) / (NY as f64);
-                let r = cam.get_ray(u, v);
-                col += color(&r, &world, &mut rng, 0);
-            }
-            col /= NS as f64;
-            col = Vec3(col.r().sqrt(), col.g().sqrt(), col.b().sqrt());
-            pixels[3 * NX * (NY - j - 1) + 3 * i] = (255.99 * col.r()) as u8;
-            pixels[3 * NX * (NY - j - 1) + 3 * i + 1] = (255.99 * col.g()) as u8;
-            pixels[3 * NX * (NY - j - 1) + 3 * i + 2] = (255.99 * col.b()) as u8;
+    let colors: Vec<Vec<Vec3>> = (0..NY)
+        .into_par_iter()
+        .rev()
+        .map(|j| {
+            let mut rng = thread_rng();
+            (0..NX)
+                .map(|i| {
+                    let mut col = Vec3(0.0, 0.0, 0.0);
+                    for _ in 0..NS {
+                        let u = ((i as f64) + rng.gen::<f64>()) / (NX as f64);
+                        let v = ((j as f64) + rng.gen::<f64>()) / (NY as f64);
+                        let r = cam.get_ray(u, v);
+                        col += color(&r, &world, &mut rng, 0);
+                    }
+                    col /= NS as f64;
+                    col
+                })
+                .collect()
+        })
+        .collect();
+    let mut pixels: Vec<u8> = Vec::new();
+    for column in colors.iter() {
+        for &col in column.iter() {
+            pixels.push((255.99 * col.r().sqrt()) as u8);
+            pixels.push((255.99 * col.g().sqrt()) as u8);
+            pixels.push((255.99 * col.b().sqrt()) as u8);
         }
     }
     writer.write_image_data(&pixels)?;
