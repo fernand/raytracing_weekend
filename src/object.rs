@@ -24,8 +24,11 @@ impl Hitable {
                 let c = oc.dot(&oc) - radius * radius;
                 let discriminant = b * b - a * c;
                 if discriminant > 0.0 {
-                    let mut temp = (-b - discriminant.sqrt()) / a;
-                    if temp < t_max && temp > t_min {
+                    let a_t_max = a * t_max;
+                    let a_t_min = a * t_min;
+                    let mut temp = -b - discriminant.sqrt();
+                    if temp < a_t_max && temp > a_t_min {
+                        temp = temp / a;
                         let p = r.point_at_parameter(temp);
                         return Some(HitRecord {
                             t: temp,
@@ -34,8 +37,9 @@ impl Hitable {
                             material: &material,
                         });
                     }
-                    temp = (-b + discriminant.sqrt()) / a;
-                    if temp < t_max && temp > t_min {
+                    temp = -b + discriminant.sqrt();
+                    if temp < a_t_max && temp > a_t_min {
+                        temp = temp / a;
                         let p = r.point_at_parameter(temp);
                         return Some(HitRecord {
                             t: temp,
