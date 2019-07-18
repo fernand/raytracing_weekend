@@ -55,7 +55,7 @@ fn write_png(nx: usize, ny: usize, colors: &Vec<Vec<Vec3>>) -> std::io::Result<(
 fn main() {
     const NX: usize = 2000;
     const NY: usize = 1000;
-    const NS: usize = 100;
+    const NS: usize = 1;
     let world = World::new(vec![
         Hitable::Sphere {
             center: Vec3(0.0, 0.0, -1.0),
